@@ -8,10 +8,10 @@
 struct Node
 {
     std::vector<int> state;
-    int g;       // Cost from start
-    int h;       // Heuristic cost
-    int f;       // Total cost (g + h)
-    int zeroPos; // Index of the empty tile (0)
+    int g;       
+    int h;      
+    int f;       
+    int zeroPos; 
 
     std::vector<std::string> path;
 

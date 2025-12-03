@@ -12,69 +12,42 @@ std::vector<int> Heuristics::generateSnailGoal(int N)
 
     while (top <= bottom && left <= right)
     {
-        // Move Right
         for (int i = left; i <= right; ++i)
-        {
             goal[top * N + i] = value++;
-        }
         top++;
-
-        // Move Down
         for (int i = top; i <= bottom; ++i)
-        {
             goal[i * N + right] = value++;
-        }
         right--;
-
-        // Move Left
         if (top <= bottom)
         {
             for (int i = right; i >= left; --i)
-            {
                 goal[bottom * N + i] = value++;
-            }
             bottom--;
         }
-
-        // Move Up
         if (left <= right)
         {
             for (int i = bottom; i >= top; --i)
-            {
                 goal[i * N + left] = value++;
-            }
             left++;
         }
     }
-
     for (int i = 0; i < N * N; ++i)
-    {
         if (goal[i] == N * N)
             goal[i] = 0;
-    }
 
     return goal;
 }
 
-// --- 2. ROBUST SOLVABILITY CHECK ---
-// We calculate "polarity" for both Start and Goal. They must match.
-// Polarity = (Inversions + RowOfZero) % 2 (logic depends on N width)
 bool Heuristics::isSolvable(const std::vector<int> &start, const std::vector<int> &goal, int N)
 {
     int startInversions = countInversions(start);
     int goalInversions = countInversions(goal);
 
     if (N % 2 != 0)
-    {
-        // Odd Width: Only inversion parity matters
         return (startInversions % 2 == goalInversions % 2);
-    }
     else
     {
-        // Even Width: Parity depends on Inversions + Row of Empty Tile
         int startZeroRow = 0, goalZeroRow = 0;
-
-        // Find row of 0 (from top, 0-indexed)
         for (int i = 0; i < N * N; ++i)
         {
             if (start[i] == 0)
@@ -83,13 +56,8 @@ bool Heuristics::isSolvable(const std::vector<int> &start, const std::vector<int
                 goalZeroRow = i / N;
         }
 
-        // Calculate distance from bottom (or just use row index, as long as consistent)
-        // Standard formula uses row from bottom, but comparing (Inv + Row) parity works
-        // if we are consistent.
-
         int startPolarity = (startInversions + startZeroRow) % 2;
         int goalPolarity = (goalInversions + goalZeroRow) % 2;
-
         return (startPolarity == goalPolarity);
     }
 }
@@ -105,10 +73,6 @@ int Heuristics::countInversions(const std::vector<int> &state)
         {
             if (state[j] == 0)
                 continue;
-            // Note: We are counting inversions based on VALUES.
-            // This assumes the goal is 1,2,3... for the purpose of the count.
-            // Since we compare StartInversions vs GoalInversions calculated the SAME WAY,
-            // the relative parity check works even for Snail goals.
             if (state[i] > state[j])
                 inversions++;
         }
@@ -116,15 +80,12 @@ int Heuristics::countInversions(const std::vector<int> &state)
     return inversions;
 }
 
-// --- 3. HEURISTICS (Updated to use the Goal State map) ---
-
-// Helper to map values to their goal coordinates (O(1) lookup during search)
 std::vector<std::pair<int, int>> precomputeGoalPositions(const std::vector<int> &goal, int N)
 {
     std::vector<std::pair<int, int>> positions(N * N);
     for (int i = 0; i < N * N; ++i)
     {
-        positions[goal[i]] = {i % N, i / N}; // Store x, y for value goal[i]
+        positions[goal[i]] = {i % N, i / N};
     }
     return positions;
 }

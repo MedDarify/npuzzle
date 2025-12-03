@@ -3,17 +3,14 @@
 #include <iostream>
 #include <algorithm>
 
-// Note: Function pointer signature changed to accept goal state
 Solver::Solver(int size, std::vector<int> initial, 
                std::function<int(const std::vector<int>&, int, const std::vector<int>&)> hFunc) 
     : N(size), initialBoard(initial), heuristic(hFunc), totalNodesOpened(0), maxNodesInMemory(0) {
     
-    // 1. Generate the SNAIL Goal
     goalState = Heuristics::generateSnailGoal(N);
 }
 
 void Solver::solve() {
-    // 2. Check Solvability comparing Initial vs Goal
     if (!Heuristics::isSolvable(initialBoard, goalState, N)) {
         std::cout << "Unsolvable puzzle" << std::endl;
         return;
@@ -22,7 +19,6 @@ void Solver::solve() {
     Node start;
     start.state = initialBoard;
     start.g = 0;
-    // Pass goalState to heuristic
     start.h = heuristic(initialBoard, N, goalState); 
     start.f = start.g + start.h;
     
@@ -69,8 +65,6 @@ void Solver::solve() {
                 Node neighbor;
                 neighbor.state = newState;
                 neighbor.g = current.g + 1;
-                
-                // Pass goalState to heuristic
                 neighbor.h = heuristic(newState, N, goalState);
                 
                 neighbor.f = neighbor.g + neighbor.h;

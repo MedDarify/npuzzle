@@ -9,9 +9,10 @@
 
 class Solver {
 public:
-    // Constructor updated to match new heuristic signature
     Solver(int size, std::vector<int> initialBoard, 
-           std::function<int(const std::vector<int>&, int, const std::vector<int>&)> heuristicFunc);
+           std::function<int(const std::vector<int>&, 
+            int, 
+            const std::vector<int>&)> heuristicFunc);
            
     void solve();
 
@@ -20,7 +21,6 @@ private:
     std::vector<int> initialBoard;
     std::vector<int> goalState;
     
-    // Heuristic now accepts (State, Size, GoalState)
     std::function<int(const std::vector<int>&, int, const std::vector<int>&)> heuristic; 
 
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> openSet;

@@ -21,9 +21,7 @@ std::pair<int, std::vector<int>> Parser::parseInput(const std::string &filename)
     {
         size_t commentPos = line.find('#');
         if (commentPos != std::string::npos)
-        {
             line = line.substr(0, commentPos);
-        }
 
         if (line.empty())
             continue;
