@@ -28,6 +28,8 @@ clean:
 
 fclean: clean
 	rm -f $(NAME)
+	rm -f puzzle.txt
+	rm -f solution.txt
 
 re: fclean all
 

@@ -2,6 +2,8 @@
 #include "../includes/Heuristics.hpp"
 #include <iostream>
 #include <algorithm>
+#include <iomanip> // Required for std::setw
+#include <fstream> // For file output
 
 Solver::Solver(int size, std::vector<int> initial, 
                std::function<int(const std::vector<int>&, int, const std::vector<int>&)> hFunc) 
@@ -23,7 +25,8 @@ void Solver::solve() {
     start.f = start.g + start.h;
     
     for(size_t i=0; i<initialBoard.size(); ++i) {
-        if(initialBoard[i] == 0) start.zeroPos = i;
+        if(initialBoard[i] == 0) 
+            start.zeroPos = i;
     }
 
     openSet.push(start);
@@ -80,9 +83,127 @@ void Solver::solve() {
 }
 
 void Solver::printSolution(const Node& sol) {
-    std::cout << "Complexity in time: " << totalNodesOpened << std::endl;
-    std::cout << "Complexity in size: " << maxNodesInMemory << std::endl;
-    std::cout << "Number of moves: " << sol.g << std::endl;
-    std::cout << "Sequence:" << std::endl;
-    for (const auto& move : sol.path) std::cout << move << std::endl;
+    // --- 1. CONSOLE STYLING (Colors for Terminal) ---
+    const std::string RESET  = "\033[0m";
+    const std::string BOLD   = "\033[1m";
+    const std::string DIM    = "\033[2m";
+    const std::string GREEN  = "\033[32m";
+    const std::string YELLOW = "\033[33m";
+    const std::string MAGENTA= "\033[35m";
+    const std::string CYAN   = "\033[36m";
+    const std::string BG_SUCCESS = "\033[42;1m\033[37m"; 
+
+    auto getArrow = [](const std::string& move) -> std::string {
+        if (move == "UP")    return "↑";
+        if (move == "DOWN")  return "↓";
+        if (move == "LEFT")  return "←";
+        if (move == "RIGHT") return "→";
+        return "";
+    };
+
+    // --- Print Dashboard to Console ---
+    std::cout << std::endl;
+    std::cout << "  " << BG_SUCCESS << "  SUCCESS  " << RESET << BOLD << GREEN << "  Puzzle Solved!" << RESET << std::endl;
+    std::cout << std::endl;
+    std::cout << CYAN << "  ┌────────────────────────────────────────────────────────┐" << RESET << std::endl;
+    std::cout << CYAN << "  │ " << RESET << BOLD << "Time Complexity " << RESET << "(Nodes Opened)   : " << YELLOW << std::setw(10) << totalNodesOpened << CYAN << "   │" << RESET << std::endl;
+    std::cout << CYAN << "  │ " << RESET << BOLD << "Size Complexity " << RESET << "(Max Memory)     : " << YELLOW << std::setw(10) << maxNodesInMemory << CYAN << "   │" << RESET << std::endl;
+    std::cout << CYAN << "  │ " << RESET << BOLD << "Path Length     " << RESET << "(Total Moves)    : " << MAGENTA << std::setw(10) << sol.g << CYAN << "   │" << RESET << std::endl;
+    std::cout << CYAN << "  └────────────────────────────────────────────────────────┘" << RESET << std::endl;
+    std::cout << std::endl;
+
+    // --- Print Grid Moves to Console ---
+    std::cout << BOLD << "  Solution Path:" << RESET << std::endl;
+    int step = 1;
+    int colCounter = 0;
+    for (const auto& move : sol.path) {
+        if (colCounter == 0) std::cout << "  "; 
+        std::cout << DIM << "[" << std::setw(3) << step++ << "] " << RESET << BOLD << getArrow(move) << " " << std::left << std::setw(6) << move << RESET;
+        if (++colCounter >= 5) { std::cout << std::endl; colCounter = 0; }
+        else std::cout << "   ";
+    }
+    if (colCounter != 0) std::cout << std::endl; 
+    std::cout << std::endl;
+
+    // --- 2. FILE OUTPUT STYLING (ASCII Art for .txt) ---
+    std::string filename = "solution.txt";
+    std::ofstream outFile(filename);
+    
+    if (!outFile.is_open()) {
+        std::cerr << "Error: Could not create output file." << std::endl;
+        return;
+    }
+
+    std::cout << CYAN << "  [INFO] " << RESET << "Writing styled report to " << BOLD << filename << RESET << "... ";
+
+    // -- File Header --
+    outFile << "============================================================" << std::endl;
+    outFile << "                   N-PUZZLE SOLUTION REPORT                 " << std::endl;
+    outFile << "============================================================" << std::endl;
+    outFile << "  Algorithm       : A* (A-Star)" << std::endl;
+    outFile << "  Time Complexity : " << totalNodesOpened << " nodes opened" << std::endl;
+    outFile << "  Size Complexity : " << maxNodesInMemory << " max nodes in memory" << std::endl;
+    outFile << "  Total Moves     : " << sol.g << std::endl;
+    outFile << "============================================================" << std::endl << std::endl;
+
+    std::vector<int> currentBoard = initialBoard;
+    step = 0;
+
+    // -- Helper to draw horizontal lines (+----+----+) --
+    auto drawLine = [&](int n) {
+        outFile << "    "; 
+        for(int i=0; i<n; ++i) outFile << "+----";
+        outFile << "+" << std::endl;
+    };
+
+    // -- Lambda to print the styled board --
+    auto printBoardToFile = [&](const std::string& moveName, int stepNum) {
+        std::string arrow = (moveName == "INITIAL") ? "" : getArrow(moveName);
+        
+        outFile << "  Step " << std::setw(3) << std::setfill('0') << stepNum << std::setfill(' ') 
+                << ": " << moveName << " " << arrow << std::endl;
+        
+        drawLine(N);
+        for (int i = 0; i < N; ++i) {
+            outFile << "    "; // Indent
+            for (int j = 0; j < N; ++j) {
+                int val = currentBoard[i * N + j];
+                outFile << "|";
+                if (val == 0) outFile << "    "; // Empty tile is 4 spaces
+                else outFile << std::setw(3) << val << " ";
+            }
+            outFile << "|" << std::endl; // Close row
+            drawLine(N);
+        }
+        outFile << std::endl;
+    };
+
+    // Print Initial State
+    printBoardToFile("INITIAL", 0);
+
+    // Replay Moves
+    int z = -1;
+    for(size_t i=0; i<currentBoard.size(); ++i) if(currentBoard[i] == 0) z = i;
+
+    for (const auto& move : sol.path) {
+        step++;
+        int row = z / N;
+        int col = z % N;
+        int targetZ = -1;
+
+        if (move == "UP")         targetZ = (row - 1) * N + col;
+        else if (move == "DOWN")  targetZ = (row + 1) * N + col;
+        else if (move == "LEFT")  targetZ = row * N + (col - 1);
+        else if (move == "RIGHT") targetZ = row * N + (col + 1);
+
+        if (targetZ >= 0 && targetZ < (int)currentBoard.size()) {
+            std::swap(currentBoard[z], currentBoard[targetZ]);
+            z = targetZ;
+        }
+        printBoardToFile(move, step);
+    }
+
+    outFile.close();
+    std::cout << GREEN << "Done!" << RESET << std::endl;
+    std::cout << std::endl;
 }

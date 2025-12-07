@@ -39,5 +39,6 @@ std::pair<int, std::vector<int>> Parser::parseInput(const std::string &filename)
                 board.push_back(val);
         }
     }
+    
     return {N, board};
 }
