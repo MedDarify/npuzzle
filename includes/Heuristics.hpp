@@ -4,30 +4,23 @@
 #include <vector>
 #include <cmath>
 
-class Heuristics
-{
-public:
-    static int calculateManhattan(
-        const std::vector<int> &state,
-        int size,
-        const std::vector<int> &goalState);
-    static int calculateHamming(
-        const std::vector<int> &state,
-        int size,
-        const std::vector<int> &goalState);
-    static int calculateLinearConflict(
-        const std::vector<int> &state,
-        int size,
-        const std::vector<int> &goalState);
+struct HeuristicArgs {
+    const std::vector<int>& state;
+    int size;
+    const std::vector<int>& goalState;
+};
 
-    static bool isSolvable(
-        const std::vector<int> &initialState,
-        const std::vector<int> &goalState,
-        int size);
+class Heuristics {
+public:
+    static int calculateManhattan(const HeuristicArgs& args);
+    static int calculateHamming(const HeuristicArgs& args);
+    static int calculateLinearConflict(const HeuristicArgs& args);
+
+    static bool isSolvable(const HeuristicArgs& args);
     static std::vector<int> generateSnailGoal(int size);
 
 private:
-    static int countInversions(const std::vector<int> &state);
+    static int countInversions(const std::vector<int>& state);
 };
 
 #endif

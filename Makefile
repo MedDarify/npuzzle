@@ -1,6 +1,6 @@
 NAME = npuzzle
 CC = g++
-CFLAGS = -Wall -Wextra -Werror -O3 
+CFLAGS = -Wall -Wextra -Werror
 
 INCLUDES = -I includes
 

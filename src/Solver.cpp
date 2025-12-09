@@ -2,31 +2,44 @@
 #include "../includes/Heuristics.hpp"
 #include <iostream>
 #include <algorithm>
-#include <iomanip> // Required for std::setw
-#include <fstream> // For file output
+#include <iomanip> 
+#include <fstream> 
+#include <iomanip> 
+#include <fstream> 
 
-Solver::Solver(int size, std::vector<int> initial, 
-               std::function<int(const std::vector<int>&, int, const std::vector<int>&)> hFunc) 
+Solver::Solver(int size, std::vector<int> initial, HeuristicFunc hFunc) 
     : N(size), initialBoard(initial), heuristic(hFunc), totalNodesOpened(0), maxNodesInMemory(0) {
     
     goalState = Heuristics::generateSnailGoal(N);
 }
 
 void Solver::solve() {
-    if (!Heuristics::isSolvable(initialBoard, goalState, N)) {
-        std::cout << "Unsolvable puzzle" << std::endl;
+    const std::string RESET  = "\033[0m";
+    const std::string BOLD   = "\033[1m";
+    const std::string DIM    = "\033[2m";
+    const std::string GREEN  = "\033[32m";
+    const std::string YELLOW = "\033[33m";
+    const std::string MAGENTA= "\033[35m";
+    const std::string CYAN   = "\033[36m";
+    const std::string BG_SUCCESS = "\033[42;1m\033[37m"; 
+    const std::string BG_ERROR = "\033[41;1m\033[37m";
+    if (!Heuristics::isSolvable({initialBoard, N, goalState})) {
+        std::cout << std::endl;
+        std::cout << "  " << BG_ERROR << "  FAILED  " << RESET << BOLD << BG_ERROR << "   Puzzle is Unsolvable!" << RESET << std::endl;
+        std::cout << std::endl;
         return;
     }
 
     Node start;
     start.state = initialBoard;
     start.g = 0;
-    start.h = heuristic(initialBoard, N, goalState); 
+    
+    start.h = heuristic({initialBoard, N, goalState}); 
+    
     start.f = start.g + start.h;
     
     for(size_t i=0; i<initialBoard.size(); ++i) {
-        if(initialBoard[i] == 0) 
-            start.zeroPos = i;
+        if(initialBoard[i] == 0) start.zeroPos = i;
     }
 
     openSet.push(start);
@@ -66,10 +79,10 @@ void Solver::solve() {
                 if (closedSet.find(newState) != closedSet.end()) continue;
 
                 Node neighbor;
+
                 neighbor.state = newState;
                 neighbor.g = current.g + 1;
-                neighbor.h = heuristic(newState, N, goalState);
-                
+                neighbor.h = heuristic({newState, N, goalState});
                 neighbor.f = neighbor.g + neighbor.h;
                 neighbor.zeroPos = newZ;
                 neighbor.path = current.path;
@@ -83,7 +96,6 @@ void Solver::solve() {
 }
 
 void Solver::printSolution(const Node& sol) {
-    // --- 1. CONSOLE STYLING (Colors for Terminal) ---
     const std::string RESET  = "\033[0m";
     const std::string BOLD   = "\033[1m";
     const std::string DIM    = "\033[2m";
@@ -101,7 +113,6 @@ void Solver::printSolution(const Node& sol) {
         return "";
     };
 
-    // --- Print Dashboard to Console ---
     std::cout << std::endl;
     std::cout << "  " << BG_SUCCESS << "  SUCCESS  " << RESET << BOLD << GREEN << "  Puzzle Solved!" << RESET << std::endl;
     std::cout << std::endl;
@@ -112,7 +123,6 @@ void Solver::printSolution(const Node& sol) {
     std::cout << CYAN << "  └────────────────────────────────────────────────────────┘" << RESET << std::endl;
     std::cout << std::endl;
 
-    // --- Print Grid Moves to Console ---
     std::cout << BOLD << "  Solution Path:" << RESET << std::endl;
     int step = 1;
     int colCounter = 0;
@@ -122,10 +132,9 @@ void Solver::printSolution(const Node& sol) {
         if (++colCounter >= 5) { std::cout << std::endl; colCounter = 0; }
         else std::cout << "   ";
     }
-    if (colCounter != 0) std::cout << std::endl; 
-    std::cout << std::endl;
+    if (colCounter != 0) 
+        std::cout << std::endl; 
 
-    // --- 2. FILE OUTPUT STYLING (ASCII Art for .txt) ---
     std::string filename = "solution.txt";
     std::ofstream outFile(filename);
     
@@ -134,9 +143,6 @@ void Solver::printSolution(const Node& sol) {
         return;
     }
 
-    std::cout << CYAN << "  [INFO] " << RESET << "Writing styled report to " << BOLD << filename << RESET << "... ";
-
-    // -- File Header --
     outFile << "============================================================" << std::endl;
     outFile << "                   N-PUZZLE SOLUTION REPORT                 " << std::endl;
     outFile << "============================================================" << std::endl;
@@ -149,14 +155,12 @@ void Solver::printSolution(const Node& sol) {
     std::vector<int> currentBoard = initialBoard;
     step = 0;
 
-    // -- Helper to draw horizontal lines (+----+----+) --
     auto drawLine = [&](int n) {
         outFile << "    "; 
         for(int i=0; i<n; ++i) outFile << "+----";
         outFile << "+" << std::endl;
     };
 
-    // -- Lambda to print the styled board --
     auto printBoardToFile = [&](const std::string& moveName, int stepNum) {
         std::string arrow = (moveName == "INITIAL") ? "" : getArrow(moveName);
         
@@ -165,23 +169,19 @@ void Solver::printSolution(const Node& sol) {
         
         drawLine(N);
         for (int i = 0; i < N; ++i) {
-            outFile << "    "; // Indent
+            outFile << "    "; 
             for (int j = 0; j < N; ++j) {
                 int val = currentBoard[i * N + j];
                 outFile << "|";
-                if (val == 0) outFile << "    "; // Empty tile is 4 spaces
+                if (val == 0) outFile << "    "; 
                 else outFile << std::setw(3) << val << " ";
             }
-            outFile << "|" << std::endl; // Close row
+            outFile << "|" << std::endl;
             drawLine(N);
         }
         outFile << std::endl;
     };
-
-    // Print Initial State
     printBoardToFile("INITIAL", 0);
-
-    // Replay Moves
     int z = -1;
     for(size_t i=0; i<currentBoard.size(); ++i) if(currentBoard[i] == 0) z = i;
 
@@ -204,6 +204,4 @@ void Solver::printSolution(const Node& sol) {
     }
 
     outFile.close();
-    std::cout << GREEN << "Done!" << RESET << std::endl;
-    std::cout << std::endl;
 }

@@ -6,30 +6,29 @@
 #include <unordered_set>
 #include <queue>
 #include <functional>
+#include "../includes/Heuristics.hpp"
 
 class Solver {
 public:
-    Solver(int size, std::vector<int> initialBoard, 
-           std::function<int(const std::vector<int>&, 
-            int, 
-            const std::vector<int>&)> heuristicFunc);
+    using HeuristicFunc = std::function<int(const HeuristicArgs&)>;
+
+    Solver(int size, std::vector<int> initialBoard, HeuristicFunc hFunc);
            
     void solve();
+    void printSolution(const Node& sol);
 
 private:
     int N;
     std::vector<int> initialBoard;
     std::vector<int> goalState;
     
-    std::function<int(const std::vector<int>&, int, const std::vector<int>&)> heuristic; 
+    HeuristicFunc heuristic;
 
     std::priority_queue<Node, std::vector<Node>, std::greater<Node>> openSet;
     std::unordered_set<std::vector<int>, VectorHash> closedSet;
 
     int totalNodesOpened;
     int maxNodesInMemory;
-
-    void printSolution(const Node& solutionNode);
 };
 
 #endif
